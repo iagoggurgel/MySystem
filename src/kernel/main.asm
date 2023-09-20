@@ -151,11 +151,22 @@ diskReset:
     popa
     ret
 
+main: 
+
     xor ax, ax ; limpa ax
     mov ds, ax ; move conteúdo de ax para ds
     mov es, ax
 
-    mov si, msg
+    mov ss, ax
+    mov sp, 0x7c00
+
+    mov [bsDriveNumber], dl
+    mov ax, 1
+    mov cl, 1
+    mov bx, 0x7E00
+    call diskRead
+
+    mov si, msg_welcome
     call Print
 
     xor ax, ax
