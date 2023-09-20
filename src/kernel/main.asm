@@ -2,10 +2,10 @@ org 0x7c00                          ; carregado pela BIOS no endereço 0x7c00
 
 bits 16                             ; modo real de 16 bits
 
-start:      jmp loader
+start:      jmp main
 
 ;*************************************************;
-;	OEM Parameter block
+;	Organização do disco
 ;*************************************************;
 
 TIMES 0Bh-$+start DB 0
@@ -30,7 +30,9 @@ bsVolumeLabel: 	        DB "MOS FLOPPY "
 bsFileSystem: 	        DB "FAT12   "
 
 
-msg db "Bem-vindo ao meu sistema operacional!", 0
+msg_welcome db "Bem-vindo ao meu sistema operacional!", 0
+msg_error db "Erro na leitura do disco!", 0
+
 
 ;************;
 ;  Print     ;
