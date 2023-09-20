@@ -48,30 +48,108 @@ Print:
 PrintDone:
     ret
 
-;***********************************************;
-;       Bootloader begins                       ;
-;***********************************************;
+floppyError:
+    mov si, msg_error
+    call Print
+    jmp waitAndReboot
 
-.Reset: 
+waitAndReboot:
     mov ah, 0
-    mov dl, 0
-    int 0x13
-    jc .Reset
+    int 0x16
+    jmp 0xFFFF:0
 
-.Read:
+.halt:
+    cli
+    hlt
+
+;
+; Disk Routines
+;
+
+; Converte endereço LBA para endereço CHS
+; Paramêtros:
+; - ax : LBA address
+; Returns:
+; - cx[0 - 5 bits]: sector number
+; - cx[6 - 15]: cylinder number
+; - dh: head number
+
+
+lbaToChs:
+
+    push ax
+    push dx
+
+    xor dx, dx
+    div word [bpbSectorsPerTrack]
+
+    inc dx
+    mov cx, dx
+
+    xor dx, dx
+    div word [bpbHeadsPerCylinder]
+    
+    mov dh, dl
+    mov ch, al
+    shl al, 6
+    or cl, ah
+    
+    pop ax
+    mov dl, al
+    pop ax
+    ret
+
+diskRead:
+
+    push ax
+    push bx
+    push cx
+    push dx
+    push di
+
+
+    push cx
+    call lbaToChs
+    pop ax
+
     mov ah, 0x02
-    mov al, 1
-    mov ch, 1
-    mov cl, 2
-    mov dh, 0
-    mov dl, 0
+    mov di, 3
+
+
+.retry:
+    pusha
+    stc 
     int 0x13
-    jc .Read
+    jnc .done
 
-    jmp 0x1000:0x0
+    popa
+    call diskReset
 
+    dec di
+    test di, 0
+    jnz .retry
 
-loader: 
+.fail:
+    jmp floppyError
+
+.done:
+    popa
+
+    pop di
+    pop dx
+    pop cx
+    pop bx
+    pop ax
+    ret
+
+diskReset:
+    pusha
+    mov ah, 0
+    stc 
+    int 0x13
+    jc floppyError
+    popa
+    ret
 
     xor ax, ax ; limpa ax
     mov ds, ax ; move conteúdo de ax para ds
